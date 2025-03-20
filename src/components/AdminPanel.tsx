@@ -12,6 +12,9 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import AppointmentSticker from './AppointmentSticker';
 
+// Define a type for sort keys to include both direct and nested properties
+type SortKey = keyof Appointment | 'patientName';
+
 const AdminPanel: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,7 +22,7 @@ const AdminPanel: React.FC = () => {
   const [foundPatient, setFoundPatient] = useState<Appointment | null>(null);
   const [currentSerial, setCurrentSerial] = useState(2); // Mock current serial number
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof Appointment | keyof Appointment['patientInfo'] | '';
+    key: SortKey | '';
     direction: 'ascending' | 'descending';
   }>({ key: '', direction: 'ascending' });
 
@@ -100,14 +103,13 @@ const AdminPanel: React.FC = () => {
     
     let aValue, bValue;
     
-    // Handle nested properties
-    if (sortConfig.key.includes('patientInfo.')) {
-      const nestedKey = sortConfig.key.split('.')[1] as keyof typeof a.patientInfo;
-      aValue = a.patientInfo[nestedKey];
-      bValue = b.patientInfo[nestedKey];
+    // Handle special case for patient name
+    if (sortConfig.key === 'patientName') {
+      aValue = a.patientInfo.name;
+      bValue = b.patientInfo.name;
     } else {
-      aValue = a[sortConfig.key as keyof typeof a];
-      bValue = b[sortConfig.key as keyof typeof b];
+      aValue = a[sortConfig.key as keyof Appointment];
+      bValue = b[sortConfig.key as keyof Appointment];
     }
     
     if (aValue < bValue) {
@@ -119,7 +121,7 @@ const AdminPanel: React.FC = () => {
     return 0;
   });
 
-  const requestSort = (key: typeof sortConfig.key) => {
+  const requestSort = (key: SortKey) => {
     let direction: 'ascending' | 'descending' = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
       direction = 'descending';
@@ -127,7 +129,7 @@ const AdminPanel: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const getSortIcon = (columnName: typeof sortConfig.key) => {
+  const getSortIcon = (columnName: SortKey) => {
     if (sortConfig.key !== columnName) return null;
     
     return sortConfig.direction === 'ascending' ? (
@@ -301,11 +303,11 @@ const AdminPanel: React.FC = () => {
                           </th>
                           <th
                             className="px-4 py-3 text-left font-medium cursor-pointer"
-                            onClick={() => requestSort('patientInfo.name')}
+                            onClick={() => requestSort('patientName')}
                           >
                             <div className="flex items-center">
                               Patient
-                              {getSortIcon('patientInfo.name')}
+                              {getSortIcon('patientName')}
                             </div>
                           </th>
                           <th className="px-4 py-3 text-left font-medium">Status</th>
@@ -579,11 +581,11 @@ const AdminPanel: React.FC = () => {
                           </th>
                           <th
                             className="px-4 py-3 text-left font-medium cursor-pointer"
-                            onClick={() => requestSort('patientInfo.name')}
+                            onClick={() => requestSort('patientName')}
                           >
                             <div className="flex items-center">
                               Patient
-                              {getSortIcon('patientInfo.name')}
+                              {getSortIcon('patientName')}
                             </div>
                           </th>
                           <th
